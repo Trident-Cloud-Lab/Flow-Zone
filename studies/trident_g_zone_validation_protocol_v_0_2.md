@@ -969,6 +969,346 @@ This first cycle should be treated as a **research validation study**, not a pro
 
 **Footnote — methodological safeguards for cognitive and RR dynamics.** Cognitive DFA estimates will be treated as trial-indexed dynamics unless otherwise stated: the primary `cog_alpha1` analysis uses trial number as the discrete time axis, after residualising task-design effects. Where datasets have highly variable pacing, sensitivity analyses should compare trial-index DFA with time-binned or interpolated series, while noting that interpolation can itself smooth state dynamics. Entropy metrics should not rely solely on a `u_t` series dominated by raw binary accuracy; the primary lag/DFA series may use raw `u_t`, but permutation/difference entropy should also be estimated from continuous or smoothed series, such as residual RT, efficiency, rolling accuracy, or Gaussian-smoothed correctness. For RR data, DFA α1 scale bounds should be pre-specified and tested for sensitivity, because estimates are affected by scale range and series length; the study should report the primary short-scale choice and at least one robustness check. `BODY_RIGID_PERSISTENT` should not be assigned from high `lag1` or α1 alone, and should not require low α1 as a hard threshold. At rest, high lag/persistence may reflect organised vagal/RSA structure rather than rigidity. A rigid-persistent interpretation should require a multivariate profile of persistence with reduced local freedom, reduced entropy/transition diversity, low sign-change or drift-like behaviour, appropriate condition context, and weak evidence for flexible state transition. Conversely, `BODY_ACTIVATED_NEAR_ZONE` may be rare in resting-only datasets and should be expected mainly under low-load task engagement, amusement, recovery-from-activation, or other mildly mobilised conditions. HDBSCAN settings should be pre-specified and subjected to sensitivity checks; an initial rule such as `min_cluster_size = max(10, 0.05 × N_windows)` is acceptable, but should be repeated across nearby values and interpreted alongside GMM/Bayesian GMM stability, not used as a sole decision criterion.
 
+# 9A. Individual-Differences and Personalised Classifier Layer
+
+The public-data validation study primarily tests whether body and cognitive zone structure can be recovered at the population level. However, the eventual Flow Zone classifier should not rely only on fixed population thresholds. Trident-G predicts that individuals differ in their tonic challenge stance, Ψ-band accessibility, recovery dynamics and dominant failure modes. Therefore, the validation protocol should include an individual-differences layer that tests whether state classification improves when population priors are combined with personal baselines and outcome-calibrated routing.
+
+## 9A.1 Core principle
+
+The individual classifier should not ask only:
+
+```text
+Is this person high or low relative to the population?
+```
+
+It should ask:
+
+```text
+Is this person above, below, or displaced from their own regulated-ready range?
+Does that displacement predict their cognitive performance, subjective state, recovery and route response?
+```
+
+The intended architecture is:
+
+```text
+population prior
+→ personal baseline learning
+→ within-person deviation scoring
+→ personalised latent-state classifier
+→ outcome-calibrated routing
+```
+
+## 9A.2 Population prior phase
+
+Before sufficient personal data exist, the classifier should use the validated population model as a cautious prior.
+
+Early-session outputs should be low-confidence and claim-safe:
+
+```text
+This pattern is broadly consistent with a ready / flat / locked / spun-out tendency,
+but more personal baseline data are needed.
+```
+
+Suggested phase rule:
+
+| Sessions | Classifier behaviour                                                             |
+| -------: | -------------------------------------------------------------------------------- |
+|      1–3 | Population prior only; very cautious feedback.                                   |
+|      4–7 | Provisional personal baselines.                                                  |
+|     8–15 | Initial personalised state probabilities.                                        |
+|    15–30 | Stronger user-specific state signatures.                                         |
+|      30+ | Stable trends, baseline shifts, recovery patterns and personal Ψ-band estimates. |
+
+## 9A.3 Personal baseline features
+
+The classifier should estimate each user’s typical regulated range across body, cognitive, subjective and outcome streams.
+
+### Body stream
+
+```text
+personal resting HR range
+personal lnRMSSD or RMSSD range where available
+personal HRV complexity range
+personal DFA α1 range where reliable
+personal lag / roughness / entropy profile
+personal recovery slope
+personal activation tolerance
+```
+
+### Cognitive stream
+
+```text
+personal response-speed range
+personal accuracy range
+personal RT variability profile
+personal lapse-rate profile
+personal control-cost profile
+personal post-error slowing profile
+personal MFT-M / CCC stability profile
+```
+
+### Subjective stream
+
+```text
+personal energy anchors
+personal focus anchors
+personal stress / tension anchors
+personal control / readiness anchors
+```
+
+### Outcome stream
+
+```text
+self-rated session quality
+training or work completion
+post-route improvement
+next-session readiness
+next-day recovery
+route adherence
+route success or failure
+```
+
+## 9A.4 Within-person deviation scoring
+
+After provisional baselines exist, each feature should be expressed as both a population-standardised value and a personal deviation value.
+
+Recommended personal score:
+
+```text
+personal_z(feature) =
+  (current_feature − rolling_personal_median) / rolling_personal_MAD
+```
+
+Use exponentially weighted moving averages or rolling windows to track slow baseline change.
+
+The model should distinguish:
+
+```text
+state deviation = how unusual today is relative to the person’s normal pattern
+trait/profile tendency = the person’s repeated drift pattern across weeks
+plasticity trend = whether the person’s regulated-ready baseline is improving
+```
+
+## 9A.5 Personal state scores
+
+Before enough data exist for a full personal latent-state model, compute continuous state scores rather than hard labels.
+
+Suggested personal scores:
+
+```text
+Ready score
+Locked score
+Spun-out / scattered score
+Flat score
+```
+
+The score names may be mapped onto product-safe language later.
+
+Example feature logic:
+
+```text
+Ready score =
+moderate mobilisation
++ stable accuracy
++ manageable RT variability
++ adequate local flexibility
++ good recovery
++ good subjective focus/control
+```
+
+```text
+Locked score =
+high mobilisation relative to baseline
++ reduced local flexibility
++ elevated control cost
++ perseveration or post-error rigidity
++ high subjective pressure
++ poor recovery
+```
+
+```text
+Spun-out score =
+high volatility
++ high RT variability
++ high lapse rate or unstable accuracy
++ high entropy-like fluctuation
++ subjective agitation or overload
++ poor recovery
+```
+
+```text
+Flat score =
+low mobilisation
++ slow responses
++ low task engagement
++ low throughput
++ high lapse tendency
++ low subjective energy
++ weak adaptation across the task
+```
+
+Convert scores into probabilities using a softmax or calibrated probabilistic model:
+
+```text
+p_ready
+p_locked
+p_spun_out
+p_flat
+confidence
+```
+
+## 9A.6 Personal latent-state model
+
+Once sufficient repeated sessions exist, fit a personalised latent-state model using the population classifier as a prior.
+
+Candidate models:
+
+```text
+personal Gaussian mixture model
+hidden Markov model
+Bayesian latent profile model
+online logistic regression
+Bayesian hierarchical model
+```
+
+Preferred research direction:
+
+```text
+population-level priors
++ user-specific parameters
++ session-level deviations
++ route-response outcomes
+```
+
+The goal is to learn each user’s personal F★ corridor and Ψ-band accessibility:
+
+```text
+What does this person’s regulated-ready range look like?
+How wide is their Ψ-band?
+How quickly do they leave it?
+Do they tend to go locked, spun-out or flat?
+Which route reliably brings them back?
+Is their baseline improving over weeks?
+```
+
+## 9A.7 Baseline learning versus plasticity learning
+
+The individual layer should separate two forms of learning.
+
+### Baseline learning
+
+Baseline learning asks:
+
+```text
+What is normal for this person?
+```
+
+Examples:
+
+```text
+usual resting HR
+usual lnRMSSD / RMSSD
+usual recovery slope
+usual MFT-M accuracy
+usual RT variability
+usual control cost
+usual morning/evening difference
+```
+
+### Plasticity learning
+
+Plasticity learning asks:
+
+```text
+What is changing in this person over weeks?
+```
+
+Examples:
+
+```text
+baseline in-zone probability increasing
+recovery slope improving
+less over-bracing after cognitive load
+better task stability under challenge
+lower route failure rate
+faster return from off-zone states
+```
+
+This distinction is essential. A one-off readiness score estimates today’s state; a personalised Flow Zone model should also estimate whether the user’s state-regulation capacity is improving over time.
+
+## 9A.8 Route-response calibration
+
+The final product classifier should learn not only the state, but the best route for that state in that person.
+
+Each session should store:
+
+```text
+user_id
+session_id
+timestamp
+context: sleep, caffeine, exercise, illness, stress, time of day
+body feature vector
+cognitive feature vector
+subjective ratings
+state probabilities
+recommended route
+route completed: yes/no
+post-route state if re-measured
+next-session or next-day outcome
+```
+
+The key validation question becomes:
+
+```text
+Does the personalised state estimate improve route selection beyond a fixed programme or population-only classifier?
+```
+
+## 9A.9 Individual-differences outputs
+
+The personalised classifier should eventually report:
+
+```text
+current state probability
+confidence
+usual regulated-ready pattern
+dominant drift pattern
+best reset / activation / recovery route
+recovery trend
+baseline in-zone probability
+state-transition tendency
+route-response history
+```
+
+Example product-safe output:
+
+```text
+Your current pattern is more consistent with an over-braced / locked tendency than your usual baseline. Your previous sessions suggest that a short downshift route followed by reduced-load work is usually more effective than pushing straight into high demand.
+```
+
+## 9A.10 Validation criteria for the individual layer
+
+The individual-differences classifier is supported if:
+
+```text
+1. Within-person deviation scores predict outcomes better than population scores alone.
+2. Personal baselines improve state-label stability after 8–15 sessions.
+3. Personalised state probabilities predict route response better than fixed route assignment.
+4. Individual drift profiles are stable enough to classify dominant tendencies.
+5. Baseline trends track meaningful improvement or deterioration over weeks.
+6. Leave-one-user-out and within-user cross-validation show generalisable benefit.
+```
+
+The individual layer is weakened if:
+
+```text
+1. Personal baselines add no predictive value beyond population priors.
+2. State probabilities remain unstable after sufficient repeated sessions.
+3. Route-response predictions fail to improve over time.
+4. Apparent individual profiles are explained mainly by sensor artefact, context or time of day.
+```
+
+This layer should be treated as the bridge between the public-data validation study and the commercial Flow Zone product.
+
 ---
 
 ## A. Candidate journals
